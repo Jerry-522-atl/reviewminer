@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImageGrab</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🖼️ ImageGrab</h1>
+      <span id="count" class="count-badge">0 images</span>
+    </header>
+
+    <div class="toolbar">
+      <div class="filter-group">
+        <label>Min Size:</label>
+        <select id="minSize">
+          <option value="0">Any</option>
+          <option value="100">100px+</option>
+          <option value="200" selected>200px+</option>
+          <option value="400">400px+</option>
+          <option value="800">800px+</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Format:</label>
+        <select id="format">
+          <option value="all">All</option>
+          <option value="jpg">JPG/JPEG</option>
+          <option value="png">PNG</option>
+          <option value="webp">WebP</option>
+          <option value="svg">SVG</option>
+          <option value="gif">GIF</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="refreshBtn" class="btn btn-secondary">🔄 Refresh</button>
+      <button id="downloadAllBtn" class="btn btn-primary">📥 Download All</button>
+    </div>
+
+    <div id="status" class="status hidden"></div>
+
+    <div id="imageList" class="image-list">
+      <div class="loading">Click "Refresh" to find images...</div>
+    </div>
+
+    <div class="footer">
+      <span>ImageGrab v1.0</span>
+      <span id="selectedCount" class="hidden">0 selected</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
