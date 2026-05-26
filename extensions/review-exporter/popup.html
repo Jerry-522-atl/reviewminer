@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReviewExporter</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ReviewExporter</h1>
+      <span id="count" class="count-badge">0 reviews found</span>
+    </header>
+
+    <div id="productInfo" class="product-info hidden">
+      <span id="productName" class="product-name"></span>
+      <span id="reviewCount" class="review-count"></span>
+    </div>
+
+    <div class="actions">
+      <button id="scanBtn" class="btn btn-secondary">Scan Page</button>
+      <button id="exportCsvBtn" class="btn btn-primary" disabled>Export CSV</button>
+    </div>
+
+    <div class="actions">
+      <button id="analyzeBtn" class="btn btn-analyze" disabled>Analyze with AI on ReviewMiner</button>
+    </div>
+
+    <div id="status" class="status hidden"></div>
+
+    <div id="preview" class="preview">
+      <div class="preview-empty">Click "Scan Page" to find reviews...</div>
+    </div>
+
+    <div class="referral">
+      <p>Get AI-powered review analysis on <a id="reviewminerLink2" href="#">ReviewMiner</a></p>
+      <p class="sub">Find competitor weaknesses, pain points & market opportunities</p>
+    </div>
+
+    <div class="footer">
+      <span>ReviewExporter v1.0</span>
+      <span id="exportStatus"></span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

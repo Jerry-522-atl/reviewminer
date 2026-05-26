@@ -1,7 +1,11 @@
-// Popup logic for ImageGrab
+// ImageGrab v1.1 - with PRO tier & ReviewMiner referral
+
+const FREE_LIMIT = 5;
+const REVIEWMINER_URL = 'https://reviewminer.xyz';
 
 let allImages = [];
 let selectedImages = new Set();
+let isPro = false;
 
 const imageList = document.getElementById('imageList');
 const countBadge = document.getElementById('count');
@@ -11,6 +15,19 @@ const minSizeSelect = document.getElementById('minSize');
 const formatSelect = document.getElementById('format');
 const statusEl = document.getElementById('status');
 const selectedCount = document.getElementById('selectedCount');
+const limitWarning = document.getElementById('limitWarning');
+const upsell = document.getElementById('upsell');
+const proBadge = document.getElementById('proBadge');
+const upgradeLink = document.getElementById('upgradeLink');
+const activateProBtn = document.getElementById('activateProBtn');
+const reviewminerLink = document.getElementById('reviewminerLink');
+
+// Init
+chrome.storage.local.get(['proStatus'], (result) => {
+  isPro = result.proStatus === true;
+  updateProUI();
+});
+reviewminerLink.href = REVIEWMINER_URL;
 
 // Load images from active tab
 async function loadImages() {
@@ -23,14 +40,13 @@ async function loadImages() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) {
       showStatus('No active tab found', 'error');
-      imageList.innerHTML = '<div class="loading">No active tab. Please refresh the page and try again.</div>';
+      imageList.innerHTML = '<div class="loading">No active tab. Refresh the page and try again.</div>';
       return;
     }
 
     const response = await chrome.tabs.sendMessage(tab.id, { action: 'getImages' });
 
     if (!response || !response.images) {
-      // Content script might not be ready, inject it
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: ['content.js'],
@@ -54,7 +70,6 @@ async function loadImages() {
   }
 }
 
-// Get image format from URL
 function getFormat(src) {
   const url = src.split('?')[0].toLowerCase();
   if (url.endsWith('.jpg') || url.endsWith('.jpeg')) return 'jpg';
@@ -67,12 +82,11 @@ function getFormat(src) {
   return 'other';
 }
 
-// Filter and render images
-function renderImages() {
+function getFiltered() {
   const minSize = parseInt(minSizeSelect.value);
   const format = formatSelect.value;
 
-  const filtered = allImages.filter((img) => {
+  return allImages.filter((img) => {
     if (minSize > 0) {
       const maxDim = Math.max(img.width || 0, img.height || 0);
       if (maxDim < minSize) return false;
@@ -82,9 +96,13 @@ function renderImages() {
     }
     return true;
   });
+}
+
+function renderImages() {
+  const filtered = getFiltered();
 
   if (filtered.length === 0) {
-    imageList.innerHTML = '<div class="loading">No images match your filters. Try adjusting the size or format.</div>';
+    imageList.innerHTML = '<div class="loading">No images match filters. Try adjusting size or format.</div>';
     countBadge.textContent = '0 images';
     return;
   }
@@ -92,18 +110,17 @@ function renderImages() {
   countBadge.textContent = `${filtered.length} images`;
   imageList.innerHTML = filtered
     .map(
-      (img, i) => `
+      (img) => `
       <div class="image-card ${selectedImages.has(img.src) ? 'selected' : ''}" data-src="${encodeURIComponent(img.src)}">
         <img src="${img.src}" alt="${img.alt || 'Image'}" loading="lazy" onerror="this.parentElement.style.display='none'">
         <div class="overlay">
           <span class="size">${img.width}x${img.height || '?'}</span>
-          <button class="download-btn" data-src="${encodeURIComponent(img.src)}">↓</button>
+          <button class="download-btn" data-src="${encodeURIComponent(img.src)}">&#8595;</button>
         </div>
       </div>`
     )
     .join('');
 
-  // Add click listeners
   imageList.querySelectorAll('.image-card').forEach((card) => {
     card.addEventListener('click', (e) => {
       if (e.target.classList.contains('download-btn')) return;
@@ -116,7 +133,7 @@ function renderImages() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const src = decodeURIComponent(btn.dataset.src);
-      downloadImage(src);
+      downloadSingle(src);
     });
   });
 }
@@ -126,6 +143,10 @@ function toggleSelect(src, card) {
     selectedImages.delete(src);
     card.classList.remove('selected');
   } else {
+    if (!isPro && selectedImages.size >= FREE_LIMIT) {
+      showUpsell();
+      return;
+    }
     selectedImages.add(src);
     card.classList.add('selected');
   }
@@ -136,10 +157,10 @@ function updateSelectionUI() {
   if (selectedImages.size > 0) {
     selectedCount.textContent = `${selectedImages.size} selected`;
     selectedCount.classList.remove('hidden');
-    downloadAllBtn.textContent = `📥 Download Selected (${selectedImages.size})`;
+    downloadAllBtn.textContent = `Download Selected (${selectedImages.size})`;
   } else {
     selectedCount.classList.add('hidden');
-    downloadAllBtn.textContent = '📥 Download All Filtered';
+    downloadAllBtn.textContent = 'Download All Filtered';
   }
 }
 
@@ -147,8 +168,22 @@ function updateCount() {
   countBadge.textContent = `${allImages.length} images total`;
 }
 
-// Download a single image
-function downloadImage(src) {
+function updateProUI() {
+  if (isPro) {
+    proBadge.classList.remove('hidden');
+    limitWarning.classList.add('hidden');
+    upsell.classList.add('hidden');
+  } else {
+    proBadge.classList.add('hidden');
+  }
+}
+
+function showUpsell() {
+  upsell.classList.remove('hidden');
+  showStatus('Free limit: select up to 5 images', 'error');
+}
+
+function downloadSingle(src) {
   const filename = src.split('/').pop()?.split('?')[0] || 'image';
   chrome.downloads.download({
     url: src,
@@ -159,25 +194,20 @@ function downloadImage(src) {
   setTimeout(() => statusEl.classList.add('hidden'), 1500);
 }
 
-// Download all filtered images
 async function downloadAll() {
-  const minSize = parseInt(minSizeSelect.value);
-  const format = formatSelect.value;
-
-  const toDownload = allImages.filter((img) => {
-    if (selectedImages.size > 0) return selectedImages.has(img.src);
-    if (minSize > 0) {
-      const maxDim = Math.max(img.width || 0, img.height || 0);
-      if (maxDim < minSize) return false;
-    }
-    if (format !== 'all') {
-      if (getFormat(img.src) !== format) return false;
-    }
-    return true;
-  });
+  const filtered = getFiltered();
+  const toDownload = selectedImages.size > 0
+    ? filtered.filter((img) => selectedImages.has(img.src))
+    : filtered;
 
   if (toDownload.length === 0) {
     showStatus('No images to download', 'error');
+    return;
+  }
+
+  if (!isPro && toDownload.length > FREE_LIMIT) {
+    showUpsell();
+    limitWarning.classList.remove('hidden');
     return;
   }
 
@@ -194,7 +224,6 @@ async function downloadAll() {
       saveAs: false,
     });
 
-    // Small delay to avoid overwhelming the download queue
     if (i < toDownload.length - 1) {
       await new Promise((r) => setTimeout(r, 150));
     }
@@ -214,6 +243,26 @@ refreshBtn.addEventListener('click', loadImages);
 downloadAllBtn.addEventListener('click', downloadAll);
 minSizeSelect.addEventListener('change', renderImages);
 formatSelect.addEventListener('change', renderImages);
+
+upgradeLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  showUpsell();
+});
+
+activateProBtn.addEventListener('click', () => {
+  // In production, this would integrate with a payment processor
+  // For now, we use a simple activation flow
+  const code = prompt('Enter your PRO activation code:\n\n(For testing, enter: PRO-FREE-TEST)');
+  if (code === 'PRO-FREE-TEST') {
+    isPro = true;
+    chrome.storage.local.set({ proStatus: true });
+    updateProUI();
+    showStatus('PRO activated! Unlimited downloads unlocked.', 'success');
+    renderImages();
+  } else if (code) {
+    showStatus('Invalid activation code. Check and try again.', 'error');
+  }
+});
 
 // Load on open
 loadImages();

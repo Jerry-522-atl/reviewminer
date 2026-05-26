@@ -9,8 +9,11 @@
 <body>
   <div class="container">
     <header>
-      <h1>🖼️ ImageGrab</h1>
-      <span id="count" class="count-badge">0 images</span>
+      <h1>ImageGrab</h1>
+      <div class="header-right">
+        <span id="proBadge" class="pro-badge hidden">PRO</span>
+        <span id="count" class="count-badge">0 images</span>
+      </div>
     </header>
 
     <div class="toolbar">
@@ -38,8 +41,12 @@
     </div>
 
     <div class="actions">
-      <button id="refreshBtn" class="btn btn-secondary">🔄 Refresh</button>
-      <button id="downloadAllBtn" class="btn btn-primary">📥 Download All</button>
+      <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+      <button id="downloadAllBtn" class="btn btn-primary">Download All</button>
+    </div>
+
+    <div id="limitWarning" class="limit-warning hidden">
+      Free limit: 5 images per download. <a id="upgradeLink" href="#">Upgrade to PRO</a>
     </div>
 
     <div id="status" class="status hidden"></div>
@@ -48,8 +55,22 @@
       <div class="loading">Click "Refresh" to find images...</div>
     </div>
 
+    <div id="upsell" class="upsell hidden">
+      <div class="upsell-content">
+        <strong>Unlock Unlimited Downloads</strong>
+        <p>ImageGrab PRO — $4.99 lifetime</p>
+        <button id="activateProBtn" class="btn btn-pro">Activate PRO</button>
+      </div>
+    </div>
+
+    <div class="referral">
+      <a id="reviewminerLink" href="#" title="Analyze Amazon reviews with AI">
+        Analyze competitor reviews with AI — try ReviewMiner
+      </a>
+    </div>
+
     <div class="footer">
-      <span>ImageGrab v1.0</span>
+      <span>ImageGrab v1.1</span>
       <span id="selectedCount" class="hidden">0 selected</span>
     </div>
   </div>

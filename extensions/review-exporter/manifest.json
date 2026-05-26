@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "ImageGrab - Bulk Image Downloader",
-  "version": "1.1.0",
-  "description": "Download images from any webpage. Filter by size & format. Free 5 images per batch, PRO for unlimited.",
-  "permissions": ["activeTab", "downloads", "scripting", "storage"],
+  "name": "ReviewExporter - Amazon Review Downloader",
+  "version": "1.0.0",
+  "description": "Export Amazon reviews to CSV with one click. Get AI-powered analysis on ReviewMiner.",
+  "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "ImageGrab",
+    "default_title": "ReviewExporter",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
