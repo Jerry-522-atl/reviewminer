@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, FileText, Loader2, AlertCircle, Zap, Clock, TrendingUp, Target, ChevronRight } from 'lucide-react';
 
 interface User {
@@ -27,8 +27,9 @@ interface AnalysisResult {
   ratingDistribution: { stars: number; count: number; percentage: number }[];
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +66,22 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Load analysis from extension via ?open=<id>
+  useEffect(() => {
+    const openId = searchParams.get('open');
+    if (!openId || !user) return;
+
+    fetch(`/api/receive?id=${encodeURIComponent(openId)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.analysis) {
+          setResult(data.analysis);
+          setInputMode('text');
+        }
+      })
+      .catch(() => {});
+  }, [searchParams, user]);
+
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -95,7 +112,7 @@ export default function DashboardPage() {
 
       setResult(data.analysis);
       setRemaining(data.remaining);
-      fetchData(); // refresh list
+      fetchData();
     } catch {
       setError('Network error. Please try again.');
     } finally {
@@ -236,7 +253,7 @@ export default function DashboardPage() {
 function AnalysisResultCard({ result }: { result: AnalysisResult }) {
   return (
     <div className="bg-gray-900 border border-emerald-500/20 rounded-2xl p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h3 className="text-xl font-bold">{result.productName}</h3>
           <p className="text-sm text-gray-400">{result.reviewsCount} reviews analyzed</p>
@@ -253,7 +270,6 @@ function AnalysisResultCard({ result }: { result: AnalysisResult }) {
         </div>
       </div>
 
-      {/* Competitor Weakness Summary */}
       <div className="bg-gradient-to-r from-red-500/5 to-emerald-500/5 border border-gray-800 rounded-xl p-5">
         <h4 className="text-sm font-semibold text-red-400 mb-2 flex items-center gap-1.5">
           <Target className="w-4 h-4" /> Competitor Weakness Summary
@@ -262,7 +278,6 @@ function AnalysisResultCard({ result }: { result: AnalysisResult }) {
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Pain Points */}
         <div>
           <h4 className="text-sm font-semibold text-red-400 mb-3">Pain Points</h4>
           <div className="space-y-2">
@@ -276,7 +291,6 @@ function AnalysisResultCard({ result }: { result: AnalysisResult }) {
           </div>
         </div>
 
-        {/* What Customers Love */}
         <div>
           <h4 className="text-sm font-semibold text-emerald-400 mb-3">What Customers Love</h4>
           <div className="space-y-2">
@@ -291,7 +305,6 @@ function AnalysisResultCard({ result }: { result: AnalysisResult }) {
         </div>
       </div>
 
-      {/* Improvement Suggestions */}
       <div>
         <h4 className="text-sm font-semibold text-blue-400 mb-3 flex items-center gap-1.5">
           <TrendingUp className="w-4 h-4" /> Improvement Suggestions
@@ -311,7 +324,6 @@ function AnalysisResultCard({ result }: { result: AnalysisResult }) {
         </div>
       </div>
 
-      {/* Key Phrases */}
       {result.keyPhrases.length > 0 && (
         <div>
           <h4 className="text-sm font-semibold text-purple-400 mb-3">Key Phrases for Listing Optimization</h4>
@@ -323,7 +335,6 @@ function AnalysisResultCard({ result }: { result: AnalysisResult }) {
         </div>
       )}
 
-      {/* Actionable Takeaways */}
       <div>
         <h4 className="text-sm font-semibold text-white mb-3">Action Plan</h4>
         <div className="space-y-2">
@@ -336,5 +347,17 @@ function AnalysisResultCard({ result }: { result: AnalysisResult }) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }

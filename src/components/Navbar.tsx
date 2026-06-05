@@ -33,6 +33,7 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-6 text-sm text-gray-400">
+          <Link href="/#try-it" className="hover:text-white transition-colors">Try It</Link>
           <Link href="/#features" className="hover:text-white transition-colors">Features</Link>
           <Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link>
           {user ? (

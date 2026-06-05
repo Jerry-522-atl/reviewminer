@@ -106,6 +106,16 @@ header h1 {
   background: #1a4a7a;
 }
 
+.btn-send {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: white;
+}
+
+.btn-send:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+}
+
 .btn-analyze {
   background: linear-gradient(135deg, #52b788, #40916c);
   color: white;

@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ReviewExporter</title>
   <link rel="stylesheet" href="popup.css">
 </head>
@@ -24,7 +23,11 @@
     </div>
 
     <div class="actions">
-      <button id="analyzeBtn" class="btn btn-analyze" disabled>Analyze with AI on ReviewMiner</button>
+      <button id="sendBtn" class="btn btn-send" disabled>Send & Analyze on ReviewMiner</button>
+    </div>
+
+    <div class="actions">
+      <button id="analyzeBtn" class="btn btn-analyze" disabled>Open ReviewMiner Dashboard</button>
     </div>
 
     <div id="status" class="status hidden"></div>
@@ -34,12 +37,12 @@
     </div>
 
     <div class="referral">
-      <p>Get AI-powered review analysis on <a id="reviewminerLink2" href="#">ReviewMiner</a></p>
+      <p>Get AI-powered review analysis on <a id="reviewminerLink" href="#">ReviewMiner</a></p>
       <p class="sub">Find competitor weaknesses, pain points & market opportunities</p>
     </div>
 
     <div class="footer">
-      <span>ReviewExporter v1.0</span>
+      <span>ReviewExporter v2.0</span>
       <span id="exportStatus"></span>
     </div>
   </div>

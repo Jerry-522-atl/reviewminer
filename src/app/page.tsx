@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { TrendingUp, Target, Zap, Shield, ArrowRight, Star, Check } from 'lucide-react';
+import TryItDemo from '@/components/TryItDemo';
 
 export default function Home() {
   return (
@@ -75,6 +76,9 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* Try It Demo */}
+      <TryItDemo />
 
       {/* Features */}
       <section id="features" className="px-4 py-20 max-w-6xl mx-auto">
