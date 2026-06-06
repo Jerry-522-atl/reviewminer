@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { TrendingUp, Target, Zap, Shield, ArrowRight, Star, Check } from 'lucide-react';
 import TryItDemo from '@/components/TryItDemo';
+import SubscribeButton from '@/components/SubscribeButton';
 
 export default function Home() {
   return (
@@ -112,16 +113,16 @@ export default function Home() {
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
             <h3 className="text-lg font-semibold mb-2">Starter</h3>
             <div className="text-4xl font-bold mb-1">Free</div>
-            <p className="text-gray-400 text-sm mb-6">3 analyses included</p>
+            <p className="text-gray-400 text-sm mb-6">3 analyses per month</p>
             <ul className="space-y-3 mb-8">
-              {['3 full product analyses', 'Pain point detection', 'Sentiment analysis', 'Basic keyword extraction'].map((f) => (
+              {['3 full product analyses', 'Pain point detection', 'Sentiment analysis', 'Basic keyword extraction', 'Chrome extension'].map((f) => (
                 <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0" /> {f}
                 </li>
               ))}
             </ul>
             <Link href="/register" className="block text-center border border-gray-700 hover:border-gray-500 text-white font-medium py-3 rounded-xl transition-colors">
-              Get Started
+              Get Started Free
             </Link>
           </div>
           {/* Pro */}
@@ -130,25 +131,24 @@ export default function Home() {
               MOST POPULAR
             </div>
             <h3 className="text-lg font-semibold mb-2">Professional</h3>
-            <div className="text-4xl font-bold mb-1">$29<span className="text-lg text-gray-400">/mo</span></div>
-            <p className="text-gray-400 text-sm mb-6">Unlimited analyses</p>
+            <div className="text-4xl font-bold mb-1">$19<span className="text-lg text-gray-400">/mo</span></div>
+            <p className="text-gray-400 text-sm mb-6">30 analyses per month</p>
             <ul className="space-y-3 mb-8">
               {[
-                'Unlimited product analyses',
-                'Advanced AI insights',
-                'Competitor tracking',
+                '30 full product analyses / month',
+                'Deep AI insights (MiMo-powered)',
+                'Competitor weakness analysis',
                 'Full keyword intelligence',
-                'Export reports (PDF/CSV)',
-                'Priority support',
+                'CSV export + Chrome extension',
+                '7-day free trial',
               ].map((f) => (
                 <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
                   <Star className="w-4 h-4 text-emerald-400 shrink-0" /> {f}
                 </li>
               ))}
             </ul>
-            <Link href="/register" className="block text-center bg-emerald-500 hover:bg-emerald-400 text-black font-semibold py-3 rounded-xl transition-colors">
-              Start Pro Trial
-            </Link>
+            <SubscribeButton />
+            <p className="text-center text-xs text-gray-600 mt-3">7-day free trial · Cancel anytime</p>
           </div>
         </div>
       </section>

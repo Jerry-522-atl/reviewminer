@@ -1,16 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { UserPlus, Loader2 } from 'lucide-react';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const targetPlan = searchParams.get('plan'); // 'pro' or null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +40,17 @@ export default function RegisterPage() {
         return;
       }
 
+      // If user came from Pro CTA, redirect to checkout
+      if (targetPlan === 'pro') {
+        const checkoutRes = await fetch('/api/billing/checkout', { method: 'POST' });
+        const checkoutData = await checkoutRes.json();
+        if (checkoutRes.ok && checkoutData.url) {
+          window.location.href = checkoutData.url;
+          return;
+        }
+        // If checkout fails (e.g. not configured), just go to dashboard
+      }
+
       router.push('/dashboard');
       router.refresh();
     } catch {
@@ -46,12 +60,18 @@ export default function RegisterPage() {
     }
   };
 
+  const isPro = targetPlan === 'pro';
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold mb-2">Create Account</h1>
-          <p className="text-gray-400 text-sm">Get 3 free analyses to start</p>
+          <h1 className="text-2xl font-bold mb-2">
+            {isPro ? 'Create Account & Start Trial' : 'Create Account'}
+          </h1>
+          <p className="text-gray-400 text-sm">
+            {isPro ? '7-day free trial, cancel anytime' : 'Get 3 free analyses to start'}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -91,9 +111,16 @@ export default function RegisterPage() {
             className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-            {loading ? 'Creating account...' : 'Create Free Account'}
+            {loading ? 'Creating account...' : isPro ? 'Create Account & Start Free Trial' : 'Create Free Account'}
           </button>
         </form>
+
+        {isPro && (
+          <p className="text-center text-xs text-gray-600 mt-3">
+            You&apos;ll be redirected to payment after creating your account.
+            No charges during the 7-day trial.
+          </p>
+        )}
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Already have an account?{' '}
@@ -103,5 +130,17 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }

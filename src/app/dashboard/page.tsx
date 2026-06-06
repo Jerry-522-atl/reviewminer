@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, FileText, Loader2, AlertCircle, Zap, Clock, TrendingUp, Target, ChevronRight } from 'lucide-react';
+import { Search, FileText, Loader2, AlertCircle, Zap, Clock, TrendingUp, Target, ChevronRight, CheckCircle, Crown, ExternalLink } from 'lucide-react';
 
 interface User {
   id: string; email: string; plan: string;
@@ -40,6 +40,8 @@ function DashboardContent() {
   const [error, setError] = useState('');
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [remaining, setRemaining] = useState(0);
+  const [subscribed, setSubscribed] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -81,6 +83,31 @@ function DashboardContent() {
       })
       .catch(() => {});
   }, [searchParams, user]);
+
+  // Show success banner after LemonSqueezy checkout redirect
+  useEffect(() => {
+    if (searchParams.get('subscribed') === '1') {
+      setSubscribed(true);
+      fetchData(); // Refresh user plan info
+    }
+  }, [searchParams, fetchData]);
+
+  const handleUpgrade = async () => {
+    setUpgrading(true);
+    try {
+      const res = await fetch('/api/billing/checkout', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setError(data.error || 'Payment not available yet');
+      }
+    } catch {
+      setError('Network error');
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,15 +162,66 @@ function DashboardContent() {
         <div>
           <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
           <p className="text-gray-400 text-sm">
-            {user?.plan === 'pro' ? 'Pro Plan · Unlimited analyses' : `Free Plan · ${remaining} of ${user?.analyses_limit || 3} analyses remaining`}
+            {user?.plan === 'pro'
+              ? 'Pro Plan · 30 analyses/month'
+              : `Free Plan · ${remaining} of ${user?.analyses_limit || 3} analyses remaining`}
           </p>
         </div>
-        {user?.plan === 'free' && (
-          <button className="bg-emerald-500 hover:bg-emerald-400 text-black font-medium px-5 py-2 rounded-lg text-sm transition-colors">
-            Upgrade to Pro
+        {user?.plan === 'free' ? (
+          <button
+            onClick={handleUpgrade}
+            disabled={upgrading}
+            className="bg-emerald-500 hover:bg-emerald-400 text-black font-medium px-5 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            {upgrading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Crown className="w-4 h-4" />
+            )}
+            {upgrading ? 'Redirecting...' : 'Upgrade to Pro'}
           </button>
+        ) : (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+              <CheckCircle className="w-3.5 h-3.5" />
+              Pro Active
+            </span>
+          </div>
         )}
       </div>
+
+      {/* Subscribed success banner */}
+      {subscribed && (
+        <div className="mb-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-5 py-4 flex items-center gap-3">
+          <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+          <div>
+            <div className="font-medium text-emerald-400">Welcome to Pro!</div>
+            <div className="text-sm text-gray-400">Your account has been upgraded. You now have 30 analyses per month.</div>
+          </div>
+          <button onClick={() => setSubscribed(false)} className="ml-auto text-gray-500 hover:text-gray-300 text-lg leading-none">&times;</button>
+        </div>
+      )}
+
+      {/* Free plan usage bar */}
+      {user?.plan === 'free' && (
+        <div className="mb-8 bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-400">Free analyses used</span>
+            <span className="text-sm text-gray-300">{user?.analyses_used || 0} / {user?.analyses_limit || 3}</span>
+          </div>
+          <div className="w-full bg-gray-800 rounded-full h-2 mb-3">
+            <div
+              className="bg-emerald-500 h-2 rounded-full transition-all"
+              style={{ width: `${Math.min(100, ((user?.analyses_used || 0) / (user?.analyses_limit || 3)) * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-gray-500">
+            {remaining > 0
+              ? `${remaining} free ${remaining === 1 ? 'analysis' : 'analyses'} remaining. Upgrade to Pro for 30/month.`
+              : 'No free analyses left. Upgrade to Pro to continue using ReviewMiner.'}
+          </p>
+        </div>
+      )}
 
       {/* Analysis Form */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-8">
