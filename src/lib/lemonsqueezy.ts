@@ -3,7 +3,10 @@ import crypto from 'crypto';
 const LS_API_KEY = process.env.LEMONSQUEEZY_API_KEY;
 const LS_STORE_ID = process.env.LEMONSQUEEZY_STORE_ID;
 const LS_WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
-const JWT_SECRET = process.env.JWT_SECRET || 'reviewminer-dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is not set');
+}
 const LS_GROWTH_MONTHLY_VARIANT_ID = process.env.LEMONSQUEEZY_GROWTH_MONTHLY_VARIANT_ID;
 const LS_PRO_MONTHLY_VARIANT_ID = process.env.LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID;
 
@@ -189,7 +192,7 @@ export function extractVariantId(event: WebhookEvent): string | number | null {
 /** Generate a license key for the ImageGrab extension */
 export function generateLicenseKey(userId: string): string {
   const payload = `${userId}:${Date.now()}`;
-  const hmac = crypto.createHmac('sha256', JWT_SECRET);
+  const hmac = crypto.createHmac('sha256', JWT_SECRET as string);
   hmac.update(payload);
   const raw = hmac.digest('base64url').replace(/[^A-Z0-9]/gi, '').slice(0, 16).toUpperCase();
   // Format: RM-XXXX-XXXX-XXXX-XXXX

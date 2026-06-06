@@ -2,9 +2,11 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'reviewminer-dev-secret-change-in-production-2024'
-);
+const JWT_SECRET_RAW = process.env.JWT_SECRET;
+if (!JWT_SECRET_RAW) {
+  throw new Error('FATAL: JWT_SECRET environment variable is not set');
+}
+const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_RAW);
 
 const COOKIE_NAME = 'rm_token';
 

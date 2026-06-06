@@ -37,28 +37,45 @@ Rules:
 - Write all output in English
 - Return ONLY valid JSON, no markdown, no explanation`;
 
+const AI_TIMEOUT_MS = 30_000; // 30 second timeout for AI API calls
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function callXiaomiMiMo(prompt: string, apiKey: string): Promise<string> {
   // Token Plan keys (tp- prefix) use a different endpoint
   const baseUrl = apiKey.startsWith('tp-')
     ? 'https://token-plan-cn.xiaomimimo.com/v1'
     : 'https://api.xiaomimimo.com/v1';
 
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+  const response = await fetchWithTimeout(
+    `${baseUrl}/chat/completions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'mimo-v2.5',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: 4096,
+        temperature: 0.3,
+      }),
     },
-    body: JSON.stringify({
-      model: 'mimo-v2.5',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 4096,
-      temperature: 0.3,
-    }),
-  });
+    AI_TIMEOUT_MS
+  );
 
   if (!response.ok) {
     const err = await response.text();
@@ -70,20 +87,24 @@ async function callXiaomiMiMo(prompt: string, apiKey: string): Promise<string> {
 }
 
 async function callAnthropic(prompt: string, apiKey: string): Promise<string> {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
+  const response = await fetchWithTimeout(
+    'https://api.anthropic.com/v1/messages',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: prompt }],
+      }),
     },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
+    AI_TIMEOUT_MS
+  );
 
   if (!response.ok) {
     const err = await response.text();

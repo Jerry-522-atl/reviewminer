@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyPassword, createToken, setAuthCookie } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/ratelimit';
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+
+    // Rate limit: 10 attempts per IP per minute
+    const rate = checkRateLimit(`login:${ip}`, 10, 60_000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please wait a minute.' },
+        { status: 429 }
+      );
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -29,7 +41,7 @@ export async function POST(request: NextRequest) {
       user: { id: user.id, email: user.email, plan: user.plan, analysesUsed: user.analyses_used, analysesLimit: user.analyses_limit },
     });
   } catch (error: any) {
-    console.error('Login error:', error);
+    console.error('Login error:', error.message);
     return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

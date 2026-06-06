@@ -42,9 +42,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: checkout.url });
   } catch (error: any) {
-    console.error('Checkout error:', error);
+    console.error('Checkout error:', error.message);
     return NextResponse.json(
-      { error: error.message || 'Failed to create checkout' },
+      { error: 'Failed to create checkout. Please try again.' },
       { status: 500 }
     );
   }

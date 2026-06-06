@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (error: any) {
-    console.error('Webhook error:', error);
-    return NextResponse.json({ error: error.message || 'Webhook processing failed' }, { status: 500 });
+    console.error('Webhook error:', error.message);
+    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
 }

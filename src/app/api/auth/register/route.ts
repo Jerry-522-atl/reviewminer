@@ -2,9 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuid } from 'uuid';
 import { execute, query } from '@/lib/db';
 import { hashPassword, createToken, setAuthCookie } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/ratelimit';
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+
+    // Rate limit: 5 registrations per IP per hour
+    const rate = checkRateLimit(`register:${ip}`, 5, 3600_000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Too many registrations. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -39,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, user: { id: userId, email: email.toLowerCase() } });
   } catch (error: any) {
-    console.error('Register error:', error);
+    console.error('Register error:', error.message);
     return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
   }
 }

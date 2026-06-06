@@ -76,8 +76,20 @@ export async function POST(request: NextRequest) {
       ]
     );
 
-    const newUsed = user.analyses_used + 1;
-    await execute('UPDATE users SET analyses_used = ? WHERE id = ?', [newUsed, userId]);
+    // Atomic increment — prevents race condition on concurrent requests
+    await execute(
+      'UPDATE users SET analyses_used = analyses_used + 1 WHERE id = ? AND analyses_used < analyses_limit',
+      [userId]
+    );
+
+    // Re-read the actual value after atomic increment
+    const updated = await query(
+      'SELECT analyses_used, analyses_limit FROM users WHERE id = ?',
+      [userId]
+    );
+    const actualRemaining = updated.length > 0
+      ? updated[0].analyses_limit - updated[0].analyses_used
+      : 0;
 
     const { productName: aiProductName, ...restAnalysis } = analysis;
 
@@ -89,11 +101,11 @@ export async function POST(request: NextRequest) {
         reviewsCount: reviews.length,
         ...restAnalysis,
       },
-      remaining: user.analyses_limit - newUsed,
+      remaining: Math.max(0, actualRemaining),
     });
   } catch (error: any) {
-    console.error('Analysis error:', error);
-    return NextResponse.json({ error: error.message || 'Analysis failed' }, { status: 500 });
+    console.error('Analysis error:', error.message);
+    return NextResponse.json({ error: 'Analysis failed. Please try again.' }, { status: 500 });
   }
 }
 
@@ -111,6 +123,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ analyses });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Analysis list error:', error.message);
+    return NextResponse.json({ error: 'Failed to load analyses' }, { status: 500 });
   }
 }

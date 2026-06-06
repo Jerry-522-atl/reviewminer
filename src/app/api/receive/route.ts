@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuid } from 'uuid';
-import { execute } from '@/lib/db';
+import { execute, query } from '@/lib/db';
 import { getUserId } from '@/lib/auth';
 import { parseReviewsFromText, formatReviewsForAI } from '@/lib/scraper';
 import { analyzeReviews } from '@/lib/ai';
 
-// In-memory cache for extension-submitted analyses (survives between requests, not deploys)
+// In-memory cache for extension-submitted analyses
 const analysisCache = new Map<string, object>();
 
 export async function POST(request: NextRequest) {
@@ -27,6 +27,26 @@ export async function POST(request: NextRequest) {
     const parsed = parseReviewsFromText(reviewText);
     if (parsed.length === 0) {
       return NextResponse.json({ error: 'Could not parse reviews' }, { status: 400 });
+    }
+
+    // Check quota BEFORE doing expensive AI analysis
+    const userId = await getUserId();
+    if (userId) {
+      const users = await query(
+        'SELECT analyses_used, analyses_limit, plan FROM users WHERE id = ?',
+        [userId]
+      );
+      if (users.length > 0) {
+        const user = users[0];
+        if (user.analyses_used >= user.analyses_limit) {
+          return NextResponse.json({
+            error: 'Analysis limit reached',
+            upgrade: true,
+            used: user.analyses_used,
+            limit: user.analyses_limit,
+          }, { status: 402 });
+        }
+      }
     }
 
     const formattedReviews = formatReviewsForAI(parsed);
@@ -55,15 +75,14 @@ export async function POST(request: NextRequest) {
     // Cache in memory
     analysisCache.set(analysisId, result);
 
-    // If user is logged in, save to their account
-    const userId = await getUserId();
+    // If user is logged in, save and atomically increment
     if (userId) {
       await execute(
         'INSERT INTO analyses (id, user_id, product_name, product_url, source_type, raw_reviews, status, result_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [analysisId, userId, name, productUrl || '', 'extension', formattedReviews, 'completed', JSON.stringify(analysis)]
       );
-      const users = await execute(
-        'UPDATE users SET analyses_used = analyses_used + 1 WHERE id = ?',
+      await execute(
+        'UPDATE users SET analyses_used = analyses_used + 1 WHERE id = ? AND analyses_used < analyses_limit',
         [userId]
       );
     }
@@ -75,8 +94,8 @@ export async function POST(request: NextRequest) {
       analysis: result,
     });
   } catch (error: any) {
-    console.error('Receive error:', error);
-    return NextResponse.json({ error: error.message || 'Analysis failed' }, { status: 500 });
+    console.error('Receive error:', error.message);
+    return NextResponse.json({ error: 'Analysis failed' }, { status: 500 });
   }
 }
 
