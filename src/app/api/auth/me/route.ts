@@ -10,7 +10,7 @@ export async function GET() {
     }
 
     const users = await query(
-      'SELECT id, email, plan, analyses_used, analyses_limit, subscription_status, created_at FROM users WHERE id = ?',
+      'SELECT id, email, plan, analyses_used, analyses_limit, subscription_status, license_key, created_at FROM users WHERE id = ?',
       [userId]
     );
 

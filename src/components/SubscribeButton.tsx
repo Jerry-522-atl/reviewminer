@@ -2,12 +2,24 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Star } from 'lucide-react';
+import { Loader2, Star, Zap } from 'lucide-react';
+import { PlanType } from '@/lib/lemonsqueezy';
 
-export default function SubscribeButton() {
+interface SubscribeButtonProps {
+  plan?: PlanType;
+}
+
+const labels: Record<PlanType, { icon: typeof Star; text: string }> = {
+  growth: { icon: Star, text: 'Start Growth Trial' },
+  pro: { icon: Zap, text: 'Start Pro Trial' },
+  free: { icon: Star, text: 'Start Free Trial' },
+};
+
+export default function SubscribeButton({ plan = 'growth' }: SubscribeButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { icon: Icon, text } = labels[plan];
 
   const handleSubscribe = async () => {
     setLoading(true);
@@ -20,12 +32,16 @@ export default function SubscribeButton() {
 
       if (!meData.user) {
         // Not logged in — redirect to register, then to checkout after
-        router.push('/register?plan=pro');
+        router.push(`/register?plan=${plan}`);
         return;
       }
 
-      // Create checkout
-      const res = await fetch('/api/billing/checkout', { method: 'POST' });
+      // Create checkout for the specific plan
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      });
       const data = await res.json();
 
       if (!res.ok) {
@@ -60,8 +76,8 @@ export default function SubscribeButton() {
           </>
         ) : (
           <>
-            <Star className="w-4 h-4" />
-            Start Pro Trial
+            <Icon className="w-4 h-4" />
+            {text}
           </>
         )}
       </button>

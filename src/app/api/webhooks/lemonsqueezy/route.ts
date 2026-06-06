@@ -2,10 +2,44 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   verifyWebhook,
   parseWebhookEvent,
-  planFromSubscriptionStatus,
   subscriptionStatusFromLS,
+  planFromVariantId,
+  extractVariantId,
+  planLimits,
+  generateLicenseKey,
+  PlanType,
 } from '@/lib/lemonsqueezy';
 import { query, execute } from '@/lib/db';
+
+async function setUserPlan(
+  userId: string,
+  plan: PlanType,
+  status: string,
+  subscriptionId: string,
+  customerId: string | null
+) {
+  const limit = planLimits(plan);
+
+  // Generate a license key for paid plans if user doesn't have one
+  if (plan !== 'free') {
+    const rows = await query('SELECT license_key FROM users WHERE id = ?', [userId]);
+    const existingKey = rows[0]?.license_key;
+    if (!existingKey) {
+      const licenseKey = generateLicenseKey(userId);
+      await execute(
+        'UPDATE users SET plan = ?, analyses_limit = ?, subscription_status = ?, ls_subscription_id = ?, ls_customer_id = ?, license_key = ? WHERE id = ?',
+        [plan, limit, subscriptionStatusFromLS(status), subscriptionId, customerId, licenseKey, userId]
+      );
+      console.log(`[LS Webhook] Generated license key for user ${userId}`);
+      return;
+    }
+  }
+
+  await execute(
+    'UPDATE users SET plan = ?, analyses_limit = ?, subscription_status = ?, ls_subscription_id = ?, ls_customer_id = ? WHERE id = ?',
+    [plan, limit, subscriptionStatusFromLS(status), subscriptionId, customerId, userId]
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,20 +65,20 @@ export async function POST(request: NextRequest) {
     const subscriptionId = event.data.id;
     const customerId = attrs.customer_id ? String(attrs.customer_id) : null;
 
-    console.log(`[LS Webhook] ${eventName}`, { userId, subscriptionId });
+    // Determine which plan from the variant in the webhook
+    const variantId = extractVariantId(event);
+    const status = attrs.status || 'active';
+    const plan: PlanType = variantId ? planFromVariantId(variantId) : 'free';
+
+    console.log(`[LS Webhook] ${eventName} | user=${userId} plan=${plan} variant=${variantId}`);
 
     switch (eventName) {
       case 'order_created': {
         if (userId) {
-          const status = attrs.status || 'active';
-          const plan = planFromSubscriptionStatus(status);
           const users = await query('SELECT id FROM users WHERE id = ?', [userId]);
           if (users.length > 0) {
-            await execute(
-              'UPDATE users SET plan = ?, analyses_limit = ?, subscription_status = ?, ls_subscription_id = ?, ls_customer_id = ? WHERE id = ?',
-              [plan, plan === 'pro' ? 30 : 3, subscriptionStatusFromLS(status), subscriptionId, customerId, userId]
-            );
-            console.log(`[LS Webhook] Upgraded user ${userId} to ${plan}`);
+            await setUserPlan(userId, plan, status, subscriptionId, customerId);
+            console.log(`[LS Webhook] User ${userId} → ${plan} (${planLimits(plan)} analyses/mo)`);
           }
         }
         break;
@@ -52,13 +86,8 @@ export async function POST(request: NextRequest) {
 
       case 'subscription_updated':
       case 'subscription_payment_success': {
-        const status = attrs.status || 'active';
-        const plan = planFromSubscriptionStatus(status);
         if (userId) {
-          await execute(
-            'UPDATE users SET plan = ?, analyses_limit = ?, subscription_status = ?, ls_subscription_id = ?, ls_customer_id = ? WHERE id = ?',
-            [plan, plan === 'pro' ? 30 : 3, subscriptionStatusFromLS(status), subscriptionId, customerId, userId]
-          );
+          await setUserPlan(userId, plan, status, subscriptionId, customerId);
         }
         break;
       }
@@ -76,8 +105,8 @@ export async function POST(request: NextRequest) {
       case 'subscription_expired': {
         if (userId) {
           await execute(
-            'UPDATE users SET plan = ?, analyses_limit = ?, subscription_status = ? WHERE id = ?',
-            ['free', 3, 'expired', userId]
+            'UPDATE users SET plan = ?, analyses_limit = ?, subscription_status = ?, license_key = ? WHERE id = ?',
+            ['free', planLimits('free'), 'expired', null, userId]
           );
           console.log(`[LS Webhook] Downgraded user ${userId} to free`);
         }

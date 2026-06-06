@@ -7,6 +7,7 @@ import { Search, FileText, Loader2, AlertCircle, Zap, Clock, TrendingUp, Target,
 interface User {
   id: string; email: string; plan: string;
   analyses_used: number; analyses_limit: number;
+  license_key?: string;
 }
 
 interface Analysis {
@@ -95,7 +96,13 @@ function DashboardContent() {
   const handleUpgrade = async () => {
     setUpgrading(true);
     try {
-      const res = await fetch('/api/billing/checkout', { method: 'POST' });
+      // Free → Growth, Growth → Pro
+      const targetPlan = user?.plan === 'free' ? 'growth' : 'pro';
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: targetPlan }),
+      });
       const data = await res.json();
       if (res.ok && data.url) {
         window.location.href = data.url;
@@ -130,7 +137,7 @@ function DashboardContent() {
 
       if (!res.ok) {
         if (res.status === 402) {
-          setError('Free analysis limit reached. Upgrade to Pro for unlimited analyses.');
+          setError('Analysis limit reached. Upgrade to Growth for 15 analyses/month, or Pro for 50.');
         } else {
           setError(data.error || 'Analysis failed');
         }
@@ -163,7 +170,9 @@ function DashboardContent() {
           <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
           <p className="text-gray-400 text-sm">
             {user?.plan === 'pro'
-              ? 'Pro Plan · 30 analyses/month'
+              ? 'Pro Plan · 50 analyses/month'
+              : user?.plan === 'growth'
+              ? 'Growth Plan · 15 analyses/month'
               : `Free Plan · ${remaining} of ${user?.analyses_limit || 3} analyses remaining`}
           </p>
         </div>
@@ -178,13 +187,26 @@ function DashboardContent() {
             ) : (
               <Crown className="w-4 h-4" />
             )}
+            {upgrading ? 'Redirecting...' : 'Upgrade to Growth'}
+          </button>
+        ) : user?.plan === 'growth' ? (
+          <button
+            onClick={handleUpgrade}
+            disabled={upgrading}
+            className="bg-purple-500 hover:bg-purple-400 text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            {upgrading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Zap className="w-4 h-4" />
+            )}
             {upgrading ? 'Redirecting...' : 'Upgrade to Pro'}
           </button>
         ) : (
           <div className="flex items-center gap-2 text-sm">
             <span className="bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
               <CheckCircle className="w-3.5 h-3.5" />
-              Pro Active
+              {user?.plan === 'pro' ? 'Pro' : 'Growth'} Active
             </span>
           </div>
         )}
@@ -195,30 +217,57 @@ function DashboardContent() {
         <div className="mb-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-5 py-4 flex items-center gap-3">
           <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
           <div>
-            <div className="font-medium text-emerald-400">Welcome to Pro!</div>
-            <div className="text-sm text-gray-400">Your account has been upgraded. You now have 30 analyses per month.</div>
+            <div className="font-medium text-emerald-400">Subscription Active!</div>
+            <div className="text-sm text-gray-400">
+              Your account has been upgraded. You now have {user?.analyses_limit || 30} analyses per month.
+            </div>
           </div>
           <button onClick={() => setSubscribed(false)} className="ml-auto text-gray-500 hover:text-gray-300 text-lg leading-none">&times;</button>
         </div>
       )}
 
-      {/* Free plan usage bar */}
-      {user?.plan === 'free' && (
+      {/* License key for ImageGrab extension */}
+      {user?.license_key && (
+        <div className="mb-6 bg-purple-500/5 border border-purple-500/20 rounded-xl px-5 py-4">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-xs text-purple-400 font-semibold uppercase tracking-wide">ImageGrab License Key</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <code className="bg-gray-800 text-purple-300 font-mono text-sm px-3 py-2 rounded-lg flex-1 select-all">{user.license_key}</code>
+            <button
+              onClick={() => navigator.clipboard.writeText(user.license_key!)}
+              className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 text-xs px-3 py-2 rounded-lg transition-colors"
+            >
+              Copy
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Paste this key into the ImageGrab Chrome extension to unlock unlimited image downloads.
+          </p>
+        </div>
+      )}
+
+      {/* Usage bar for non-pro plans */}
+      {user?.plan !== 'pro' && (
         <div className="mb-8 bg-gray-900 border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-400">Free analyses used</span>
+            <span className="text-sm text-gray-400">
+              {user?.plan === 'growth' ? 'Growth analyses used' : 'Free analyses used'}
+            </span>
             <span className="text-sm text-gray-300">{user?.analyses_used || 0} / {user?.analyses_limit || 3}</span>
           </div>
           <div className="w-full bg-gray-800 rounded-full h-2 mb-3">
             <div
-              className="bg-emerald-500 h-2 rounded-full transition-all"
+              className={`h-2 rounded-full transition-all ${user?.plan === 'growth' ? 'bg-purple-500' : 'bg-emerald-500'}`}
               style={{ width: `${Math.min(100, ((user?.analyses_used || 0) / (user?.analyses_limit || 3)) * 100)}%` }}
             />
           </div>
           <p className="text-xs text-gray-500">
             {remaining > 0
-              ? `${remaining} free ${remaining === 1 ? 'analysis' : 'analyses'} remaining. Upgrade to Pro for 30/month.`
-              : 'No free analyses left. Upgrade to Pro to continue using ReviewMiner.'}
+              ? `${remaining} ${remaining === 1 ? 'analysis' : 'analyses'} remaining.`
+              : user?.plan === 'growth'
+                ? 'Growth limit reached. Upgrade to Pro for 50/month.'
+                : 'No free analyses left. Upgrade to Growth to continue.'}
           </p>
         </div>
       )}

@@ -46,7 +46,8 @@
     </div>
 
     <div id="limitWarning" class="limit-warning hidden">
-      Free limit: 5 images per download. <a id="upgradeLink" href="#">Upgrade to PRO</a>
+      Free limit: 5 images per batch.
+      <a id="upgradeLink" href="#">Get unlimited →</a>
     </div>
 
     <div id="status" class="status hidden"></div>
@@ -58,19 +59,26 @@
     <div id="upsell" class="upsell hidden">
       <div class="upsell-content">
         <strong>Unlock Unlimited Downloads</strong>
-        <p>ImageGrab PRO — $4.99 lifetime</p>
-        <button id="activateProBtn" class="btn btn-pro">Activate PRO</button>
+        <p>Included free with ReviewMiner Growth ($29/mo) or Pro ($59/mo)</p>
+        <button id="getProBtn" class="btn btn-pro">Get Unlimited Access</button>
+        <div class="license-section">
+          <span class="license-hint">Already subscribed?</span>
+          <div class="license-row">
+            <input id="licenseInput" type="text" placeholder="Paste license key" maxlength="24" />
+            <button id="activateBtn" class="btn btn-sm">Activate</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="referral">
-      <a id="reviewminerLink" href="#" title="Analyze Amazon reviews with AI">
+      <a id="reviewminerLink" href="#" title="AI competitor review analysis">
         Analyze competitor reviews with AI — try ReviewMiner
       </a>
     </div>
 
     <div class="footer">
-      <span>ImageGrab v1.1</span>
+      <span>ImageGrab v1.2</span>
       <span id="selectedCount" class="hidden">0 selected</span>
     </div>
   </div>

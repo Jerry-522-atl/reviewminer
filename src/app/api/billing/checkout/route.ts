@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserId } from '@/lib/auth';
 import { query } from '@/lib/db';
-import { createCheckout, isConfigured } from '@/lib/lemonsqueezy';
+import { createCheckout, isConfigured, PlanType } from '@/lib/lemonsqueezy';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,8 +15,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const user = users[0];
-
     if (!isConfigured()) {
       return NextResponse.json(
         { error: 'Payment system is not configured yet. Please check back soon.' },
@@ -24,9 +22,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Parse requested plan from body (defaults to 'growth')
+    let plan: PlanType = 'growth';
+    try {
+      const body = await request.json();
+      if (body?.plan === 'pro' || body?.plan === 'growth') {
+        plan = body.plan;
+      }
+    } catch {
+      // No body → use default 'growth'
+    }
+
+    const user = users[0];
     const checkout = await createCheckout({
       userId,
       userEmail: user.email,
+      plan,
     });
 
     return NextResponse.json({ url: checkout.url });

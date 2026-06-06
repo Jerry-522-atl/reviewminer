@@ -105,17 +105,24 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="px-4 py-20 max-w-5xl mx-auto">
+      <section id="pricing" className="px-4 py-20 max-w-6xl mx-auto">
         <h2 className="text-3xl font-bold text-center mb-4">Simple Pricing</h2>
         <p className="text-gray-400 text-center mb-12">Start free. Upgrade when you&apos;re ready to scale.</p>
-        <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-          {/* Free */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {/* Starter */}
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 flex flex-col">
             <h3 className="text-lg font-semibold mb-2">Starter</h3>
+            <p className="text-gray-400 text-sm mb-4">Try it out risk-free</p>
             <div className="text-4xl font-bold mb-1">Free</div>
-            <p className="text-gray-400 text-sm mb-6">3 analyses per month</p>
-            <ul className="space-y-3 mb-8">
-              {['3 full product analyses', 'Pain point detection', 'Sentiment analysis', 'Basic keyword extraction', 'Chrome extension'].map((f) => (
+            <p className="text-gray-500 text-sm mb-6">3 analyses per month</p>
+            <ul className="space-y-3 mb-8 flex-1">
+              {[
+                '3 full product analyses',
+                'Pain point detection',
+                'Sentiment analysis',
+                'Basic keyword extraction',
+                'Chrome extension',
+              ].map((f) => (
                 <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0" /> {f}
                 </li>
@@ -125,17 +132,19 @@ export default function Home() {
               Get Started Free
             </Link>
           </div>
-          {/* Pro */}
-          <div className="bg-emerald-500/5 border border-emerald-500/30 rounded-2xl p-8 relative">
+
+          {/* Growth */}
+          <div className="bg-emerald-500/5 border border-emerald-500/30 rounded-2xl p-8 relative flex flex-col">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-xs font-bold px-3 py-1 rounded-full">
               MOST POPULAR
             </div>
-            <h3 className="text-lg font-semibold mb-2">Professional</h3>
-            <div className="text-4xl font-bold mb-1">$19<span className="text-lg text-gray-400">/mo</span></div>
-            <p className="text-gray-400 text-sm mb-6">30 analyses per month</p>
-            <ul className="space-y-3 mb-8">
+            <h3 className="text-lg font-semibold mb-2">Growth</h3>
+            <p className="text-gray-400 text-sm mb-4">For serious sellers</p>
+            <div className="text-4xl font-bold mb-1">$29<span className="text-lg text-gray-400">/mo</span></div>
+            <p className="text-gray-500 text-sm mb-6">15 analyses per month</p>
+            <ul className="space-y-3 mb-8 flex-1">
               {[
-                '30 full product analyses / month',
+                '15 full product analyses / month',
                 'Deep AI insights (MiMo-powered)',
                 'Competitor weakness analysis',
                 'Full keyword intelligence',
@@ -147,7 +156,32 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-            <SubscribeButton />
+            <SubscribeButton plan="growth" />
+            <p className="text-center text-xs text-gray-600 mt-3">7-day free trial · Cancel anytime</p>
+          </div>
+
+          {/* Pro */}
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 flex flex-col">
+            <h3 className="text-lg font-semibold mb-2">Pro</h3>
+            <p className="text-gray-400 text-sm mb-4">For power sellers</p>
+            <div className="text-4xl font-bold mb-1">$59<span className="text-lg text-gray-400">/mo</span></div>
+            <p className="text-gray-500 text-sm mb-6">50 analyses per month</p>
+            <ul className="space-y-3 mb-8 flex-1">
+              {[
+                '50 full product analyses / month',
+                'Everything in Growth, plus:',
+                'Priority AI processing queue',
+                'Advanced competitor profiling',
+                'Bulk analysis (paste up to 5 URLs)',
+                'Early access to new features',
+                '7-day free trial',
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
+                  <Zap className="w-4 h-4 text-emerald-400 shrink-0" /> {f}
+                </li>
+              ))}
+            </ul>
+            <SubscribeButton plan="pro" />
             <p className="text-center text-xs text-gray-600 mt-3">7-day free trial · Cancel anytime</p>
           </div>
         </div>

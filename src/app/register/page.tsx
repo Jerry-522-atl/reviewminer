@@ -13,7 +13,8 @@ function RegisterForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const targetPlan = searchParams.get('plan'); // 'pro' or null
+  const targetPlan = searchParams.get('plan'); // 'growth' | 'pro' | null
+  const isPaid = targetPlan === 'growth' || targetPlan === 'pro';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,9 +41,13 @@ function RegisterForm() {
         return;
       }
 
-      // If user came from Pro CTA, redirect to checkout
-      if (targetPlan === 'pro') {
-        const checkoutRes = await fetch('/api/billing/checkout', { method: 'POST' });
+      // If user came from a paid plan CTA, redirect to checkout
+      if (isPaid) {
+        const checkoutRes = await fetch('/api/billing/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: targetPlan }),
+        });
         const checkoutData = await checkoutRes.json();
         if (checkoutRes.ok && checkoutData.url) {
           window.location.href = checkoutData.url;
@@ -60,17 +65,17 @@ function RegisterForm() {
     }
   };
 
-  const isPro = targetPlan === 'pro';
+  const planLabel = targetPlan === 'pro' ? 'Pro' : 'Growth';
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold mb-2">
-            {isPro ? 'Create Account & Start Trial' : 'Create Account'}
+            {isPaid ? `Create Account & Start ${planLabel} Trial` : 'Create Account'}
           </h1>
           <p className="text-gray-400 text-sm">
-            {isPro ? '7-day free trial, cancel anytime' : 'Get 3 free analyses to start'}
+            {isPaid ? '7-day free trial, cancel anytime' : 'Get 3 free analyses to start'}
           </p>
         </div>
 
@@ -111,11 +116,11 @@ function RegisterForm() {
             className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-            {loading ? 'Creating account...' : isPro ? 'Create Account & Start Free Trial' : 'Create Free Account'}
+            {loading ? 'Creating account...' : isPaid ? `Create Account & Start ${planLabel} Trial` : 'Create Free Account'}
           </button>
         </form>
 
-        {isPro && (
+        {isPaid && (
           <p className="text-center text-xs text-gray-600 mt-3">
             You&apos;ll be redirected to payment after creating your account.
             No charges during the 7-day trial.

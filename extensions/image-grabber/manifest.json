@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "ImageGrab - Bulk Image Downloader",
-  "version": "1.1.0",
-  "description": "Download images from any webpage. Filter by size & format. Free 5 images per batch, PRO for unlimited.",
+  "version": "1.2.0",
+  "description": "Download images from any webpage. Filter by size & format. Free 5 images per batch — unlimited with ReviewMiner.",
   "permissions": ["activeTab", "downloads", "scripting", "storage"],
   "host_permissions": ["<all_urls>"],
   "action": {

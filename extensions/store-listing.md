@@ -1,57 +1,50 @@
-# Edge 插件商店 - 上架材料
+# Chrome Web Store 上架材料
 
-## 提交地址
-https://partner.microsoft.com/en-us/dashboard/microsoftedge
+## 注册开发者账号
 
-登录后点击 "Create new extension"，上传下面的 zip 包。
+1. 打开 https://chrome.google.com/webstore/devregister
+2. 支付 $5 一次性注册费（支持信用卡/支付宝）
+3. 等待邮件确认
 
 ---
 
 ## 插件一：ImageGrab（图片批量下载器）
 
-**Zip 包**：`image-grabber-v1.1.zip`
+**商店名称**：ImageGrab - Bulk Image Downloader
 
-**商店名称**（英文）：ImageGrab - Bulk Image Downloader
+**简短描述**（~100 chars）：
+Download all images from any webpage in one click. Filter by size and format. Free 5 images/batch — unlimited with ReviewMiner subscription.
 
-**简短描述**（英文，~100 chars）：
-Download all images from any webpage in one click. Filter by size, format, and batch download. PRO version unlocks unlimited downloads.
-
-**完整描述**（英文）：
-ImageGrab lets you download all images from any webpage with just one click.
+**完整描述**：
+ImageGrab lets you download all images from any webpage with just one click. Designed for designers, marketers, and content creators who need to collect visual assets quickly.
 
 Features:
-- One-click scan: Finds every image on the page (img tags, background images, SVG, srcset)
+- One-click scan: Finds every image on the page (img tags, backgrounds, SVGs, srcsets)
 - Smart filters: Filter by minimum size (100px to 800px+) and format (JPG, PNG, WebP, SVG, GIF)
 - Grid preview: See all images in a clean grid with dimensions displayed
 - Multi-select: Click to select specific images, or download everything
 - Bulk download: Downloads all selected images with sequential naming
 
-PRO Features (one-time purchase):
-- Remove the 5-image download limit
-- Unlimited image selection and batch download
-- Priority support
+Unlimited downloads included FREE with a ReviewMiner Growth ($29/mo) or Pro ($59/mo) subscription. Free tier: 5 images per batch.
 
 Perfect for designers, marketers, content creators, and anyone who needs to collect images from the web quickly.
 
-**搜索关键词**（英文，最多 5 个）：
-image downloader, bulk image, save images, image grabber, web images
+**搜索关键词**：image downloader, bulk image, save images, image grabber, web images
 
-**截图要求**：
-- 需要一张 1280x800 或 640x400 的截图
-- 截图内容：打开任意网页（推荐 Amazon 商品页），点击插件，展示图片网格界面
+**分类**：Productivity
+
+**价格**：免费
 
 ---
 
 ## 插件二：ReviewExporter（评论导出助手）
 
-**Zip 包**：`review-exporter-v1.0.zip`
+**商店名称**：ReviewExporter - Amazon Review to CSV
 
-**商店名称**（英文）：ReviewExporter - Amazon Review to CSV
+**简短描述**（~100 chars）：
+Export Amazon reviews to CSV with one click. Built-in AI analysis link for competitor research on ReviewMiner.
 
-**简短描述**（英文，~100 chars）：
-Export Amazon reviews to CSV with one click. Analyze competitor reviews with AI-powered insights on ReviewMiner.
-
-**完整描述**（英文）：
+**完整描述**：
 ReviewExporter helps Amazon sellers and e-commerce researchers quickly export product reviews.
 
 Features:
@@ -69,22 +62,19 @@ How it works:
 
 Free to use. No account required for basic export.
 
-**搜索关键词**（英文，最多 5 个）：
-amazon reviews, review exporter, export reviews, csv export, product reviews
+**搜索关键词**：amazon reviews, review exporter, export reviews, csv export, product reviews
 
-**截图要求**：
-- 需要一张 1280x800 或 640x400 的截图
-- 截图内容：在 Amazon 商品页打开插件，展示评论列表界面
+**分类**：Productivity
+
+**价格**：免费
 
 ---
 
 ## 提交步骤
 
-1. 打开 https://partner.microsoft.com/en-us/dashboard/microsoftedge
-2. 用你的 Microsoft 账号登录（没有就注册一个，免费）
-3. 点击 "Create new extension" → 上传 zip 文件
-4. 填写上面的名称、描述、关键词
-5. 上传截图
-6. 选择分类：Productivity
-7. 选择价格：免费
-8. 提交审核（通常 1-3 天通过）
+1. 打开 https://chrome.google.com/webstore/devconsole
+2. 点击 "New Item" → 上传对应的 zip 文件
+3. 填写上面的名称、描述、关键词
+4. 上传截图（1280x800 或 640x400 PNG）
+5. 分类选 Productivity，价格选 Free
+6. 提交审核（通常 1-3 天）

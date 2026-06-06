@@ -1,5 +1,4 @@
-// ImageGrab v1.1 - with PRO tier & ReviewMiner referral
-
+// ImageGrab v1.2 - PRO via ReviewMiner subscription
 const FREE_LIMIT = 5;
 const REVIEWMINER_URL = 'https://reviewminer.xyz';
 
@@ -19,15 +18,57 @@ const limitWarning = document.getElementById('limitWarning');
 const upsell = document.getElementById('upsell');
 const proBadge = document.getElementById('proBadge');
 const upgradeLink = document.getElementById('upgradeLink');
-const activateProBtn = document.getElementById('activateProBtn');
+const getProBtn = document.getElementById('getProBtn');
+const activateBtn = document.getElementById('activateBtn');
+const licenseInput = document.getElementById('licenseInput');
 const reviewminerLink = document.getElementById('reviewminerLink');
 
 // Init
-chrome.storage.local.get(['proStatus'], (result) => {
-  isPro = result.proStatus === true;
-  updateProUI();
+chrome.storage.local.get(['proStatus', 'licenseKey'], (result) => {
+  if (result.proStatus === true && result.licenseKey) {
+    // Verify the stored license is still valid
+    verifyLicense(result.licenseKey);
+  }
 });
 reviewminerLink.href = REVIEWMINER_URL;
+
+function updateProUI() {
+  if (isPro) {
+    proBadge.classList.remove('hidden');
+    limitWarning.classList.add('hidden');
+    upsell.classList.add('hidden');
+  } else {
+    proBadge.classList.add('hidden');
+    // Don't auto-hide limitWarning/upsell here — they appear contextually
+  }
+}
+
+async function verifyLicense(key) {
+  try {
+    const res = await fetch(`${REVIEWMINER_URL}/api/activate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ licenseKey: key }),
+    });
+    const data = await res.json();
+    if (res.ok && data.valid) {
+      isPro = true;
+      chrome.storage.local.set({ proStatus: true, licenseKey: key });
+      updateProUI();
+      renderImages();
+      return true;
+    } else {
+      // License invalid/expired — clear stored PRO status
+      isPro = false;
+      chrome.storage.local.remove(['proStatus', 'licenseKey']);
+      updateProUI();
+      return false;
+    }
+  } catch {
+    // Offline — trust cached status
+    return isPro;
+  }
+}
 
 // Load images from active tab
 async function loadImages() {
@@ -72,13 +113,13 @@ async function loadImages() {
 
 function getFormat(src) {
   const url = src.split('?')[0].toLowerCase();
-  if (url.endsWith('.jpg') || url.endsWith('.jpeg')) return 'jpg';
-  if (url.endsWith('.png')) return 'png';
-  if (url.endsWith('.webp')) return 'webp';
-  if (url.endsWith('.svg')) return 'svg';
-  if (url.endsWith('.gif')) return 'gif';
-  if (url.endsWith('.bmp')) return 'bmp';
-  if (url.endsWith('.ico')) return 'ico';
+  if (url.includes('.jpg') || url.includes('.jpeg')) return 'jpg';
+  if (url.includes('.png')) return 'png';
+  if (url.includes('.webp')) return 'webp';
+  if (url.includes('.svg')) return 'svg';
+  if (url.includes('.gif')) return 'gif';
+  if (url.includes('.bmp')) return 'bmp';
+  if (url.includes('.ico')) return 'ico';
   return 'other';
 }
 
@@ -114,7 +155,7 @@ function renderImages() {
       <div class="image-card ${selectedImages.has(img.src) ? 'selected' : ''}" data-src="${encodeURIComponent(img.src)}">
         <img src="${img.src}" alt="${img.alt || 'Image'}" loading="lazy" onerror="this.parentElement.style.display='none'">
         <div class="overlay">
-          <span class="size">${img.width}x${img.height || '?'}</span>
+          <span class="size">${img.width || '?'}x${img.height || '?'}</span>
           <button class="download-btn" data-src="${encodeURIComponent(img.src)}">&#8595;</button>
         </div>
       </div>`
@@ -168,16 +209,6 @@ function updateCount() {
   countBadge.textContent = `${allImages.length} images total`;
 }
 
-function updateProUI() {
-  if (isPro) {
-    proBadge.classList.remove('hidden');
-    limitWarning.classList.add('hidden');
-    upsell.classList.add('hidden');
-  } else {
-    proBadge.classList.add('hidden');
-  }
-}
-
 function showUpsell() {
   upsell.classList.remove('hidden');
   showStatus('Free limit: select up to 5 images', 'error');
@@ -215,7 +246,7 @@ async function downloadAll() {
 
   for (let i = 0; i < toDownload.length; i++) {
     const src = toDownload[i].src;
-    const ext = src.split('.').pop()?.split('?')[0] || 'jpg';
+    const ext = getFormat(src);
     const filename = `imagegrab/img_${String(i + 1).padStart(3, '0')}.${ext}`;
 
     chrome.downloads.download({
@@ -249,19 +280,37 @@ upgradeLink.addEventListener('click', (e) => {
   showUpsell();
 });
 
-activateProBtn.addEventListener('click', () => {
-  // In production, this would integrate with a payment processor
-  // For now, we use a simple activation flow
-  const code = prompt('Enter your PRO activation code:\n\n(For testing, enter: PRO-FREE-TEST)');
-  if (code === 'PRO-FREE-TEST') {
-    isPro = true;
-    chrome.storage.local.set({ proStatus: true });
-    updateProUI();
+// "Get Unlimited Access" → opens ReviewMiner pricing
+getProBtn.addEventListener('click', () => {
+  chrome.tabs.create({ url: `${REVIEWMINER_URL}/#pricing` });
+});
+
+// Activate license key
+activateBtn.addEventListener('click', async () => {
+  const key = licenseInput.value.trim();
+  if (!key) {
+    showStatus('Enter your license key from ReviewMiner dashboard', 'error');
+    return;
+  }
+
+  activateBtn.disabled = true;
+  activateBtn.textContent = '...';
+
+  const ok = await verifyLicense(key);
+  if (ok) {
     showStatus('PRO activated! Unlimited downloads unlocked.', 'success');
     renderImages();
-  } else if (code) {
-    showStatus('Invalid activation code. Check and try again.', 'error');
+  } else {
+    showStatus('Invalid or expired license key. Check your ReviewMiner dashboard.', 'error');
   }
+
+  activateBtn.disabled = false;
+  activateBtn.textContent = 'Activate';
+});
+
+// Enter key on Enter press
+licenseInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') activateBtn.click();
 });
 
 // Load on open
