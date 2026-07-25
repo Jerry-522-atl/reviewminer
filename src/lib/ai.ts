@@ -50,14 +50,9 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
   }
 }
 
-async function callXiaomiMiMo(prompt: string, apiKey: string): Promise<string> {
-  // Token Plan keys (tp- prefix) use a different endpoint
-  const baseUrl = apiKey.startsWith('tp-')
-    ? 'https://token-plan-cn.xiaomimimo.com/v1'
-    : 'https://api.xiaomimimo.com/v1';
-
+async function callDeepSeek(prompt: string, apiKey: string): Promise<string> {
   const response = await fetchWithTimeout(
-    `${baseUrl}/chat/completions`,
+    'https://api.deepseek.com/v1/chat/completions',
     {
       method: 'POST',
       headers: {
@@ -65,7 +60,7 @@ async function callXiaomiMiMo(prompt: string, apiKey: string): Promise<string> {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'mimo-v2.5',
+        model: 'deepseek-v4-pro',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: prompt },
@@ -79,7 +74,7 @@ async function callXiaomiMiMo(prompt: string, apiKey: string): Promise<string> {
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`MiMo API error ${response.status}: ${err}`);
+    throw new Error(`DeepSeek API error ${response.status}: ${err}`);
   }
 
   const data = await response.json();
@@ -116,7 +111,7 @@ async function callAnthropic(prompt: string, apiKey: string): Promise<string> {
 }
 
 export async function analyzeReviews(reviews: string, productUrl?: string): Promise<ReviewAnalysis> {
-  const miMoKey = process.env.MIMO_API_KEY;
+  const deepseekKey = process.env.DEEPSEEK_API_KEY;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
   const prompt = `Analyze these product reviews${productUrl ? ` from ${productUrl}` : ''}:\n\n${reviews.slice(0, 15000)}`;
@@ -124,8 +119,8 @@ export async function analyzeReviews(reviews: string, productUrl?: string): Prom
   let text: string;
 
   try {
-    if (miMoKey) {
-      text = await callXiaomiMiMo(prompt, miMoKey);
+    if (deepseekKey) {
+      text = await callDeepSeek(prompt, deepseekKey);
     } else if (anthropicKey) {
       text = await callAnthropic(prompt, anthropicKey);
     } else {
@@ -178,14 +173,14 @@ function mockAnalysis(reviews: string): ReviewAnalysis {
       ? [{ aspect: 'Product has positive feedback', frequency: positive }]
       : [{ aspect: 'Mixed reception', frequency: 0 }],
     improvementSuggestions: [
-      { suggestion: 'Enable AI-powered analysis by setting MIMO_API_KEY', priority: 'high', impact: 'Get detailed, actionable insights instead of this basic summary' },
+      { suggestion: 'Enable AI-powered analysis by setting DEEPSEEK_API_KEY', priority: 'high', impact: 'Get detailed, actionable insights instead of this basic summary' },
     ],
     opportunityScore: 5,
-    competitorWeaknessSummary: 'Add your Xiaomi MiMo API key to get real AI-powered analysis. Current results are based on basic keyword counting.',
+    competitorWeaknessSummary: 'Add your DeepSeek API key to get real AI-powered analysis. Current results are based on basic keyword counting.',
     keyPhrases: [],
     ratingDistribution: [{ stars: 4, count: positive + negative, percentage: 100 }],
     actionableTakeaways: [
-      'Set MIMO_API_KEY environment variable to unlock full AI analysis',
+      'Set DEEPSEEK_API_KEY environment variable to unlock full AI analysis',
       `Analyzed ${lines} review entries with basic heuristics`,
     ],
   };
